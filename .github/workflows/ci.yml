@@ -1,20 +1,76 @@
 name: CI
 
 on:
-#  push:
-#    branches:
-#      - main
+  push:
+    branches:
+      - main
+      - develop
   pull_request:
     branches:
       - main
+      - develop
 
 jobs:
-  flutter_test:
-    name: Run ci test
+  lint:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: subosito/flutter-action@v1
-      - run: dart pub get
-      - run: flutter analyze
-      - run: flutter test
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Set up flutter environment
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install project dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze project source
+        run: flutter analyze --fatal-warnings
+
+  test:
+    needs: lint
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Set up flutter environment
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install project dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test
+
+  build:
+    needs: test
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Set up flutter environment
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install project dependencies
+        run: flutter pub get
+
+      - name: Build android apk
+        run: flutter build apk
+
+      - name: Build android app bundle
+        run: flutter build appbundle
